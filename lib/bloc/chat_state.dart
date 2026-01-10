@@ -6,13 +6,15 @@ class ActiveJob extends Equatable {
   final String jobId;
   final ChatResponseType type;
   final JobStatus status;
-  final String messageId;
+  final String messageId; // Assistant placeholder message ID
+  final String userMessageId; // User message ID for failure tracking
 
   const ActiveJob({
     required this.jobId,
     required this.type,
     required this.status,
     required this.messageId,
+    required this.userMessageId,
   });
 
   ActiveJob copyWith({
@@ -20,12 +22,14 @@ class ActiveJob extends Equatable {
     ChatResponseType? type,
     JobStatus? status,
     String? messageId,
+    String? userMessageId,
   }) {
     return ActiveJob(
       jobId: jobId ?? this.jobId,
       type: type ?? this.type,
       status: status ?? this.status,
       messageId: messageId ?? this.messageId,
+      userMessageId: userMessageId ?? this.userMessageId,
     );
   }
 
@@ -35,6 +39,7 @@ class ActiveJob extends Equatable {
       'type': type.index,
       'status': status.index,
       'messageId': messageId,
+      'userMessageId': userMessageId,
     };
   }
 
@@ -44,11 +49,12 @@ class ActiveJob extends Equatable {
       type: ChatResponseType.values[json['type'] as int],
       status: JobStatus.values[json['status'] as int],
       messageId: json['messageId'] as String,
+      userMessageId: json['userMessageId'] as String? ?? json['messageId'] as String,
     );
   }
 
   @override
-  List<Object?> get props => [jobId, type, status, messageId];
+  List<Object?> get props => [jobId, type, status, messageId, userMessageId];
 }
 
 class ChatState extends Equatable {

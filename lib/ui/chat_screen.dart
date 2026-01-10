@@ -1,8 +1,12 @@
+import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/chat_bloc.dart';
 import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
+import '../core/constants.dart';
+import '../models/chat_message.dart';
 import 'widgets/chat_bubble.dart';
 import 'widgets/message_input.dart';
 
@@ -16,10 +20,31 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _scrollController = ScrollController();
   bool _hasScrolledOnInit = false;
+  bool _isConnected = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
+    _initConnectivity();
+  }
+
+  Future<void> _initConnectivity() async {
+    // Check initial connectivity
+    final result = await Connectivity().checkConnectivity();
+    _updateConnectionStatus(result);
+
+    // Listen for connectivity changes
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
+  }
+
+  void _updateConnectionStatus(List<ConnectivityResult> result) {
+    setState(() {
+      _isConnected = result.isNotEmpty &&
+          !result.contains(ConnectivityResult.none);
+    });
   }
 
   void _scrollToBottomOnInit() {
@@ -38,6 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _connectivitySubscription?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -65,6 +91,33 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text('Chat Assistant'),
         centerTitle: true,
         elevation: 1,
+        actions: [
+          if (!_isConnected)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Offline',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
       body: BlocConsumer<ChatBloc, ChatState>(
         listenWhen: (previous, current) {
@@ -72,8 +125,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
           if (previous.messages.length != current.messages.length) return true;
 
-          if (previous.activeJobs.length != current.activeJobs.length)
+          if (previous.activeJobs.length != current.activeJobs.length) {
             return true;
+          }
 
           if (previous.messages.isNotEmpty && current.messages.isNotEmpty) {
             final prevLast = previous.messages.last;
@@ -112,10 +166,23 @@ class _ChatScreenState extends State<ChatScreen> {
             _scrollToBottomOnInit();
           }
 
+          // Derive banner message from active jobs (more reliable than waitingMessage)
+          final activeJobCount = state.activeJobs.length;
+          final hasActiveJobs = activeJobCount > 0;
+          String? bannerMessage;
+          if (hasActiveJobs) {
+            final firstJob = state.activeJobs.values.first;
+            if (firstJob.type == ChatResponseType.imageGeneration) {
+              bannerMessage = 'Generating images...';
+            } else {
+              bannerMessage = 'Processing data...';
+            }
+          }
+
           return Column(
             children: [
-              if (state.waitingMessage != null)
-                _buildStatusBanner(context, state.waitingMessage!),
+              if (hasActiveJobs && bannerMessage != null)
+                _buildStatusBanner(context, bannerMessage),
               Expanded(
                 child: state.messages.isEmpty
                     ? _buildEmptyState(context)
@@ -140,22 +207,48 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 14,
-            height: 14,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            message,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w500,
+          GestureDetector(
+            onTap: () {
+              context.read<ChatBloc>().add(const CancelActiveJobsEvent());
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onPrimaryContainer.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ),
         ],
@@ -198,7 +291,13 @@ class _ChatScreenState extends State<ChatScreen> {
       padding: const EdgeInsets.only(top: 8, bottom: 50),
       itemCount: state.messages.length,
       itemBuilder: (context, index) {
-        return ChatBubble(message: state.messages[index]);
+        final message = state.messages[index];
+        return ChatBubble(
+          message: message,
+          onRetry: message.deliveryStatus == DeliveryStatus.failed
+              ? () => context.read<ChatBloc>().add(RetryMessageEvent(message.id))
+              : null,
+        );
       },
     );
   }

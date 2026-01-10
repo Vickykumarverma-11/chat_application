@@ -65,7 +65,9 @@ class MockApiInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) {
-    final responseType = _getRandomResponseType();
+    // Extract user message from request body
+    final message = (options.data as Map<String, dynamic>?)?['message'] as String? ?? '';
+    final responseType = _getResponseTypeFromIntent(message);
     late Map<String, dynamic> responseData;
 
     switch (responseType) {
@@ -77,15 +79,22 @@ class MockApiInterceptor extends Interceptor {
         };
 
       case ChatResponseType.imageGeneration:
-        final jobId = 'img_${DateTime.now().millisecondsSinceEpoch}';
-        _jobs[jobId] = _MockJob(
-          type: ChatResponseType.imageGeneration,
-          createdAt: DateTime.now(),
-        );
+        // Generate 1 or 2 images randomly based on timestamp
+        final imageCount = DateTime.now().millisecond % 2 == 0 ? 2 : 1;
+        final jobIds = <String>[];
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        for (var i = 0; i < imageCount; i++) {
+          final jobId = 'img_${timestamp}_$i';
+          _jobs[jobId] = _MockJob(
+            type: ChatResponseType.imageGeneration,
+            createdAt: DateTime.now(),
+          );
+          jobIds.add(jobId);
+        }
         responseData = {
           'type': 'imageGeneration',
-          'content': 'Starting image generation...',
-          'jobIds': [jobId],
+          'content': 'Generating $imageCount images...',
+          'jobIds': jobIds,
         };
 
       case ChatResponseType.dataProcessing:
@@ -158,11 +167,32 @@ class MockApiInterceptor extends Interceptor {
     }
   }
 
-  ChatResponseType _getRandomResponseType() {
-    final roll = _random.nextDouble();
-    if (roll < 0.4) return ChatResponseType.text;
-    if (roll < 0.7) return ChatResponseType.imageGeneration;
-    return ChatResponseType.dataProcessing;
+  /// Determines response type based on simple keyword matching.
+  /// This simulates realistic AI behavior where:
+  /// - Image-related keywords trigger image generation
+  /// - Data/analysis keywords trigger data processing
+  /// - Everything else returns a text response
+  ChatResponseType _getResponseTypeFromIntent(String message) {
+    final lowerMessage = message.toLowerCase();
+
+    // Image generation keywords
+    const imageKeywords = ['image', 'generate', 'picture', 'photo', 'draw', 'create image'];
+    for (final keyword in imageKeywords) {
+      if (lowerMessage.contains(keyword)) {
+        return ChatResponseType.imageGeneration;
+      }
+    }
+
+    // Data processing keywords
+    const dataKeywords = ['data', 'process', 'analyze', 'analysis', 'model', 'report', 'statistics'];
+    for (final keyword in dataKeywords) {
+      if (lowerMessage.contains(keyword)) {
+        return ChatResponseType.dataProcessing;
+      }
+    }
+
+    // Default to text for greetings, questions, and general messages
+    return ChatResponseType.text;
   }
 
   String _getRandomTextResponse() {

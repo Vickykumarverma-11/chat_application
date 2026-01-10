@@ -36,15 +36,17 @@ class StartPollingEvent extends ChatEvent {
   final String jobId;
   final ChatResponseType jobType;
   final String messageId;
+  final String userMessageId;
 
   const StartPollingEvent({
     required this.jobId,
     required this.jobType,
     required this.messageId,
+    required this.userMessageId,
   });
 
   @override
-  List<Object?> get props => [jobId, jobType, messageId];
+  List<Object?> get props => [jobId, jobType, messageId, userMessageId];
 }
 
 class PollingCompletedEvent extends ChatEvent {
@@ -65,18 +67,33 @@ class PollingCompletedEvent extends ChatEvent {
 class PollingFailedEvent extends ChatEvent {
   final String jobId;
   final String messageId;
+  final String userMessageId;
   final String error;
 
   const PollingFailedEvent({
     required this.jobId,
     required this.messageId,
+    required this.userMessageId,
     required this.error,
   });
 
   @override
-  List<Object?> get props => [jobId, messageId, error];
+  List<Object?> get props => [jobId, messageId, userMessageId, error];
 }
 
 class ResumeActiveJobsEvent extends ChatEvent {
   const ResumeActiveJobsEvent();
+}
+
+class RetryMessageEvent extends ChatEvent {
+  final String messageId;
+
+  const RetryMessageEvent(this.messageId);
+
+  @override
+  List<Object?> get props => [messageId];
+}
+
+class CancelActiveJobsEvent extends ChatEvent {
+  const CancelActiveJobsEvent();
 }
