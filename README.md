@@ -87,7 +87,7 @@ The mock API simulates realistic behavior:
 - `POST /chat` - Returns response based on message intent (keywords like "image", "data" trigger respective types)
 - `GET /poll/{jobId}` - Returns pending/completed/failed status
 
-Jobs complete after 4-8 seconds with a 15% failure rate and 10% network error simulation.
+ 
 
 ## Known Limitations
 
