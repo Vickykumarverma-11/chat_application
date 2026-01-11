@@ -29,7 +29,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
       );
     }).toList();
 
-    // Start animations with staggered delay
+     
     for (var i = 0; i < _controllers.length; i++) {
       Future.delayed(Duration(milliseconds: i * 200), () {
         if (mounted) {

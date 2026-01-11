@@ -6,8 +6,8 @@ class ActiveJob extends Equatable {
   final String jobId;
   final ChatResponseType type;
   final JobStatus status;
-  final String messageId; // Assistant placeholder message ID
-  final String userMessageId; // User message ID for failure tracking
+  final String messageId;  
+  final String userMessageId;  
 
   const ActiveJob({
     required this.jobId,

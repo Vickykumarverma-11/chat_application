@@ -13,14 +13,14 @@ class ChatMessage extends Equatable {
   final MessageContentType contentType;
   final DateTime timestamp;
   final String? imageUrl;
-  final List<String>? imageUrls; // For multiple images
+  final List<String>? imageUrls;  
   final Map<String, dynamic>? processedData;
   final String? jobId;
-  final List<String>? jobIds; // For tracking multiple jobs
-  final int? totalJobs; // Total number of jobs for this message
-  final int? completedJobs; // Number of completed jobs
-  final DeliveryStatus? deliveryStatus; // For user message delivery tracking
-  final String? errorMessage; // Error message when delivery fails
+  final List<String>? jobIds;  
+  final int? totalJobs;  
+  final int? completedJobs;  
+  final DeliveryStatus? deliveryStatus;  
+  final String? errorMessage;  
 
   const ChatMessage({
     required this.id,

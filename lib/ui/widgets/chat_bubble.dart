@@ -177,14 +177,14 @@ class ChatBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (totalJobs > 1) ...[
-              // Show grid of completed images + shimmer placeholders for pending
+            
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  // Show completed images
+                  
                   ...completedUrls.map((url) => _buildGridImage(context, url)),
-                  // Show shimmer placeholders for remaining
+                  
                   ...List.generate(totalJobs - completedJobs, (_) {
                     return Shimmer.fromColors(
                       baseColor: Colors.grey[300]!,
@@ -202,7 +202,7 @@ class ChatBubble extends StatelessWidget {
                 ],
               ),
             ] else ...[
-              // Single image loading - original behavior
+           
               Shimmer.fromColors(
                 baseColor: Colors.grey[300]!,
                 highlightColor: Colors.grey[100]!,
@@ -316,7 +316,7 @@ class ChatBubble extends StatelessWidget {
     required double width,
     required double height,
   }) {
-    // Add cache-busting for reliability
+   
     final cacheKey = ValueKey(url);
 
     return GestureDetector(

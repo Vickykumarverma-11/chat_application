@@ -135,7 +135,7 @@ class MockApiInterceptor extends Interceptor {
 
     final elapsed = DateTime.now().difference(job.createdAt).inSeconds;
 
-    // Job completes after 4-8 seconds, with 15% failure chance
+     
     if (elapsed >= 4 + _random.nextInt(5)) {
       if (_random.nextDouble() < 0.15) {
         _jobs.remove(jobId);
@@ -167,11 +167,7 @@ class MockApiInterceptor extends Interceptor {
     }
   }
 
-  /// Determines response type based on simple keyword matching.
-  /// This simulates realistic AI behavior where:
-  /// - Image-related keywords trigger image generation
-  /// - Data/analysis keywords trigger data processing
-  /// - Everything else returns a text response
+ 
   ChatResponseType _getResponseTypeFromIntent(String message) {
     final lowerMessage = message.toLowerCase();
 
@@ -191,7 +187,7 @@ class MockApiInterceptor extends Interceptor {
       }
     }
 
-    // Default to text for greetings, questions, and general messages
+    
     return ChatResponseType.text;
   }
 

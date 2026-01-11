@@ -133,14 +133,14 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
       return;
     }
 
-    // Update to sending status
+    
     final updatedMessages = List<ChatMessage>.from(state.messages);
     updatedMessages[messageIndex] = failedMessage.copyWith(
       deliveryStatus: DeliveryStatus.sending,
       errorMessage: null,
     );
 
-    // Add placeholder for assistant response
+    
     final placeholderId = _uuid.v4();
     final placeholderMessage = ChatMessage(
       id: placeholderId,
@@ -161,7 +161,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
     try {
       final response = await _apiService.sendMessage(failedMessage.content);
 
-      // Update user message to sent
+      
       final userMsgIndex = state.messages.indexWhere((m) => m.id == event.messageId);
       if (userMsgIndex != -1) {
         final msgs = List<ChatMessage>.from(state.messages);
@@ -173,7 +173,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
 
       _handleApiResponse(response, emit, placeholderId, event.messageId);
     } on ChatApiException catch (e) {
-      // Remove placeholder and mark user message as failed again
+      
       final msgs = state.messages.where((m) => m.id != placeholderId).toList();
 
       final userMsgIndex = msgs.indexWhere((m) => m.id == event.messageId);
@@ -265,7 +265,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
           ),
         );
 
-        // Start polling for all jobs
+        
         for (final jobId in jobIds) {
           add(
             StartPollingEvent(
@@ -469,7 +469,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
     final newActiveJobs = Map<String, ActiveJob>.from(state.activeJobs);
     newActiveJobs.remove(event.jobId);
 
-    // Update waiting message based on remaining jobs for this message
+     
     String? newWaitingMessage;
     if (newActiveJobs.isNotEmpty) {
       final remainingForMessage = newActiveJobs.values
@@ -480,7 +480,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
         final completed = (currentMessage.completedJobs ?? 0) + 1;
         newWaitingMessage = 'Generating images... ($completed/$total)';
       } else {
-        // Check if there are other active jobs
+         
         newWaitingMessage = newActiveJobs.isNotEmpty ? state.waitingMessage : null;
       }
     }
@@ -495,23 +495,23 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
   }
 
   void _onPollingFailed(PollingFailedEvent event, Emitter<ChatState> emit) {
-    // Find all jobs associated with this message and cancel them all
+    
     final jobsForMessage = state.activeJobs.entries
         .where((e) => e.value.messageId == event.messageId)
         .map((e) => e.key)
         .toList();
 
-    // Cleanup polling for all related jobs
+   
     for (final jobId in jobsForMessage) {
       _cleanupPolling(jobId);
     }
 
-    // Remove the assistant placeholder message
+  
     final updatedMessages = state.messages
         .where((m) => m.id != event.messageId)
         .toList();
 
-    // Find and update the user message to failed status
+   
     final userMsgIndex = updatedMessages.indexWhere(
       (m) => m.id == event.userMessageId,
     );
@@ -522,7 +522,7 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
       );
     }
 
-    // Remove all jobs for this message from activeJobs
+   
     final newActiveJobs = Map<String, ActiveJob>.from(state.activeJobs);
     for (final jobId in jobsForMessage) {
       newActiveJobs.remove(jobId);
@@ -542,28 +542,28 @@ class ChatBloc extends HydratedBloc<ChatEvent, ChatState> {
   ) {
     if (state.activeJobs.isEmpty) return;
 
-    // Get all active job info before cleanup
+     
     final jobsToCancel = Map<String, ActiveJob>.from(state.activeJobs);
 
-    // Cancel all polling timers
+   
     for (final jobId in jobsToCancel.keys) {
       _cleanupPolling(jobId);
     }
 
-    // Group jobs by messageId to remove placeholders
+   
     final messageIds = jobsToCancel.values.map((j) => j.messageId).toSet();
     final userMessageIds = jobsToCancel.values.map((j) => j.userMessageId).toSet();
 
-    // Remove placeholder messages and update user messages
+    
     final updatedMessages = state.messages
         .where((m) => !messageIds.contains(m.id))
         .toList();
 
-    // Mark user messages as cancelled (not failed, just cancelled)
+ 
     for (var i = 0; i < updatedMessages.length; i++) {
       if (userMessageIds.contains(updatedMessages[i].id)) {
         updatedMessages[i] = updatedMessages[i].copyWith(
-          deliveryStatus: DeliveryStatus.sent, // Mark as sent since user cancelled
+          deliveryStatus: DeliveryStatus.sent,  
         );
       }
     }

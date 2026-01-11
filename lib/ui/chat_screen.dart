@@ -30,11 +30,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _initConnectivity() async {
-    // Check initial connectivity
+ 
     final result = await Connectivity().checkConnectivity();
     _updateConnectionStatus(result);
 
-    // Listen for connectivity changes
+   
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       _updateConnectionStatus,
     );
@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
           _scrollToBottom();
 
           if (state.errorMessage != null) {
-            // Clear any existing snackbars first
+           
             ScaffoldMessenger.of(context).clearSnackBars();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -161,12 +161,12 @@ class _ChatScreenState extends State<ChatScreen> {
           }
         },
         builder: (context, state) {
-          // Scroll to bottom on first build with restored messages
+           
           if (state.messages.isNotEmpty && !_hasScrolledOnInit) {
             _scrollToBottomOnInit();
           }
 
-          // Derive banner message from active jobs (more reliable than waitingMessage)
+          
           final activeJobCount = state.activeJobs.length;
           final hasActiveJobs = activeJobCount > 0;
           String? bannerMessage;
